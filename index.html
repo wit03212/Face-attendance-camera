@@ -49,7 +49,7 @@ input, select{
 
 button{
   margin-top:20px;
-  padding:15px 30px;
+  padding:15px 25px;
   font-size:18px;
   background:#1976d2;
   color:white;
@@ -149,6 +149,10 @@ button:hover{
 🎥 เปิดกล้อง
 </button>
 
+<button onclick="switchCamera()">
+🔄 สลับกล้อง
+</button>
+
 <button onclick="takePhoto()">
 📸 ถ่ายรูป
 </button>
@@ -182,6 +186,10 @@ let longitude = '';
 
 let capturedImage = '';
 
+let currentStream = null;
+
+let facingMode = "user";
+
 navigator.geolocation.getCurrentPosition(
   function(position){
 
@@ -195,14 +203,34 @@ async function startCamera(){
 
   try{
 
+    if(currentStream){
+
+      currentStream.getTracks().forEach(track => {
+        track.stop();
+      });
+
+    }
+
     const stream = await navigator.mediaDevices.getUserMedia({
-      video:true,
+
+      video:{
+        facingMode:facingMode
+      },
+
       audio:false
+
     });
+
+    currentStream = stream;
 
     video.srcObject = stream;
 
-    statusText.innerHTML = 'เปิดกล้องสำเร็จ';
+    video.style.display = 'block';
+
+    statusText.innerHTML =
+      facingMode == 'user'
+      ? 'เปิดกล้องหน้า'
+      : 'เปิดกล้องหลัง';
 
   }catch(err){
 
@@ -211,6 +239,17 @@ async function startCamera(){
     statusText.innerHTML = err.message;
 
   }
+}
+
+async function switchCamera(){
+
+  facingMode =
+    facingMode == 'user'
+    ? 'environment'
+    : 'user';
+
+  await startCamera();
+
 }
 
 function takePhoto(){
@@ -231,7 +270,18 @@ function takePhoto(){
 
   preview.style.display = 'block';
 
-  statusText.innerHTML = 'ถ่ายรูปเรียบร้อย';
+  video.style.display = 'none';
+
+  if(currentStream){
+
+    currentStream.getTracks().forEach(track => {
+      track.stop();
+    });
+
+  }
+
+  statusText.innerHTML =
+    'ถ่ายรูปเรียบร้อย';
 
 }
 
