@@ -23,13 +23,28 @@ video, canvas{
   max-width:95%;
   border:4px solid #333;
   border-radius:10px;
+  margin-top:25px;
+}
+
+.input-group{
+  margin-top:15px;
+}
+
+label{
+  display:block;
+  font-size:18px;
+  margin-bottom:8px;
+  font-weight:bold;
 }
 
 input, select{
   width:250px;
   padding:12px;
   font-size:18px;
-  margin-top:15px;
+}
+
+.select-group{
+  margin-top:25px;
 }
 
 button{
@@ -50,24 +65,48 @@ button{
   font-weight:bold;
 }
 
+.success-page{
+  display:none;
+  margin-top:100px;
+}
+
+.success-page h1{
+  color:green;
+  font-size:40px;
+}
+
+.success-page p{
+  font-size:24px;
+}
+
 </style>
 
 </head>
 <body>
 
+<div id="mainPage">
+
 <h1>ระบบเช็คชื่อเข้างาน</h1>
 
-<input
-  type="text"
-  id="emp_id"
-  placeholder="รหัสพนักงาน">
+<div class="input-group">
+  <label>รหัสพนักงาน</label>
 
-<br>
+  <input
+    type="text"
+    id="emp_id"
+    placeholder="กรอกรหัสพนักงาน">
+</div>
 
-<select id="type">
-  <option value="IN">เข้างาน</option>
-  <option value="OUT">ออกงาน</option>
-</select>
+<div class="select-group">
+
+  <label>เลือกประเภท</label>
+
+  <select id="type">
+    <option value="IN">เข้างาน</option>
+    <option value="OUT">ออกงาน</option>
+  </select>
+
+</div>
 
 <br>
 
@@ -93,6 +132,16 @@ button{
 </button>
 
 <div id="status"></div>
+
+</div>
+
+<div class="success-page" id="successPage">
+
+<h1>เช็คชื่อเรียบร้อย!!</h1>
+
+<p>บันทึกข้อมูลสำเร็จ</p>
+
+</div>
 
 <script>
 
@@ -182,8 +231,9 @@ async function capture(){
 
   if(result.status == 'success'){
 
-    statusText.innerHTML =
-      'เช็คชื่อสำเร็จ : ' + result.name;
+    document.getElementById('mainPage').style.display = 'none';
+
+    document.getElementById('successPage').style.display = 'block';
 
   }else{
 
