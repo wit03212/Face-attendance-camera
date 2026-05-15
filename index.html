@@ -7,8 +7,6 @@
 
 <title>ระบบเช็คชื่อ</title>
 
-<script src="https://unpkg.com/html5-qrcode"></script>
-
 <style>
 
 body{
@@ -41,6 +39,8 @@ input, select{
   width:250px;
   padding:12px;
   font-size:18px;
+  border-radius:8px;
+  border:1px solid #ccc;
 }
 
 .select-group{
@@ -56,6 +56,12 @@ button{
   border:none;
   border-radius:10px;
   cursor:pointer;
+  margin-left:5px;
+  margin-right:5px;
+}
+
+button:hover{
+  opacity:0.9;
 }
 
 #status{
@@ -72,16 +78,26 @@ button{
 
 .success-page h1{
   color:green;
-  font-size:40px;
+  font-size:42px;
 }
 
 .success-page p{
   font-size:24px;
 }
 
+#preview{
+  width:350px;
+  max-width:95%;
+  border-radius:10px;
+  display:none;
+  border:4px solid #4caf50;
+  margin-top:20px;
+}
+
 </style>
 
 </head>
+
 <body>
 
 <div id="mainPage">
@@ -89,22 +105,24 @@ button{
 <h1>ระบบเช็คชื่อเข้างาน</h1>
 
 <div class="input-group">
-  <label>รหัสพนักงาน</label>
 
-  <input
-    type="text"
-    id="emp_id"
-    placeholder="กรอกรหัสพนักงาน">
+<label>รหัสพนักงาน</label>
+
+<input
+  type="text"
+  id="emp_id"
+  placeholder="กรอกรหัสพนักงาน">
+
 </div>
 
 <div class="select-group">
 
-  <label>เลือกประเภท</label>
+<label>เลือกประเภท</label>
 
-  <select id="type">
-    <option value="IN">เข้างาน</option>
-    <option value="OUT">ออกงาน</option>
-  </select>
+<select id="type">
+  <option value="IN">เข้างาน</option>
+  <option value="OUT">ออกงาน</option>
+</select>
 
 </div>
 
@@ -123,12 +141,20 @@ button{
 
 <br>
 
+<img id="preview">
+
+<br>
+
 <button onclick="startCamera()">
-เปิดกล้อง
+🎥 เปิดกล้อง
+</button>
+
+<button onclick="takePhoto()">
+📸 ถ่ายรูป
 </button>
 
 <button onclick="capture()">
-เช็คชื่อ
+✅ เช็คชื่อ
 </button>
 
 <div id="status"></div>
@@ -153,6 +179,8 @@ const statusText = document.getElementById('status');
 
 let latitude = '';
 let longitude = '';
+
+let capturedImage = '';
 
 navigator.geolocation.getCurrentPosition(
   function(position){
@@ -185,6 +213,28 @@ async function startCamera(){
   }
 }
 
+function takePhoto(){
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  const ctx = canvas.getContext('2d');
+
+  ctx.drawImage(video,0,0);
+
+  capturedImage = canvas.toDataURL('image/png');
+
+  const preview =
+    document.getElementById('preview');
+
+  preview.src = capturedImage;
+
+  preview.style.display = 'block';
+
+  statusText.innerHTML = 'ถ่ายรูปเรียบร้อย';
+
+}
+
 async function capture(){
 
   const empId =
@@ -200,47 +250,59 @@ async function capture(){
 
   }
 
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  if(!capturedImage){
 
-  const ctx = canvas.getContext('2d');
+    alert('กรุณาถ่ายรูปก่อน');
+    return;
 
-  ctx.drawImage(video,0,0);
-
-  const image = canvas.toDataURL('image/png');
+  }
 
   statusText.innerHTML = 'กำลังบันทึก...';
 
-  const response = await fetch(API_URL, {
+  try{
 
-    method:'POST',
+    const response = await fetch(API_URL, {
 
-    body:JSON.stringify({
+      method:'POST',
 
-      emp_id:empId,
-      type:type,
-      latitude:latitude,
-      longitude:longitude,
-      image:image
+      body:JSON.stringify({
 
-    })
+        emp_id:empId,
+        type:type,
+        latitude:latitude,
+        longitude:longitude,
+        image:capturedImage
 
-  });
+      })
 
-  const result = await response.json();
+    });
 
-  if(result.status == 'success'){
+    const result = await response.json();
 
-    document.getElementById('mainPage').style.display = 'none';
+    console.log(result);
 
-    document.getElementById('successPage').style.display = 'block';
+    if(result.status == 'success'){
 
-  }else{
+      document.getElementById('mainPage').style.display = 'none';
+
+      document.getElementById('successPage').style.display = 'block';
+
+    }else{
+
+      statusText.innerHTML =
+        result.message || 'เกิดข้อผิดพลาด';
+
+    }
+
+  }catch(error){
+
+    console.error(error);
 
     statusText.innerHTML =
-      result.message;
+      'เชื่อมต่อระบบไม่สำเร็จ';
 
   }
+
 }
 
 </script>
