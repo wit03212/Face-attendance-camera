@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>ระบบเช็คชื่อ</title>
+<title>ระบบเช็คชื่อพนักงาน</title>
 
 <style>
 
@@ -14,14 +14,6 @@ body{
   text-align:center;
   background:#f2f2f2;
   padding:20px;
-}
-
-video, canvas{
-  width:350px;
-  max-width:95%;
-  border:4px solid #333;
-  border-radius:10px;
-  margin-top:25px;
 }
 
 .input-group{
@@ -36,7 +28,7 @@ label{
 }
 
 input, select{
-  width:250px;
+  width:260px;
   padding:12px;
   font-size:18px;
   border-radius:8px;
@@ -49,19 +41,22 @@ input, select{
 
 button{
   margin-top:20px;
-  padding:15px 25px;
+  padding:15px 30px;
   font-size:18px;
   background:#1976d2;
   color:white;
   border:none;
   border-radius:10px;
   cursor:pointer;
-  margin-left:5px;
-  margin-right:5px;
 }
 
-button:hover{
-  opacity:0.9;
+#preview{
+  width:350px;
+  max-width:95%;
+  border-radius:10px;
+  border:4px solid #4caf50;
+  margin-top:25px;
+  display:none;
 }
 
 #status{
@@ -83,15 +78,6 @@ button:hover{
 
 .success-page p{
   font-size:24px;
-}
-
-#preview{
-  width:350px;
-  max-width:95%;
-  border-radius:10px;
-  display:none;
-  border:4px solid #4caf50;
-  margin-top:20px;
 }
 
 </style>
@@ -126,36 +112,19 @@ button:hover{
 
 </div>
 
-<br>
+<br><br>
 
-<video
-  id="video"
-  autoplay
-  playsinline>
-</video>
-
-<canvas
-  id="canvas"
-  style="display:none;">
-</canvas>
+<input
+  type="file"
+  accept="image/*"
+  capture="environment"
+  id="cameraInput">
 
 <br>
 
 <img id="preview">
 
 <br>
-
-<button onclick="startCamera()">
-🎥 เปิดกล้อง
-</button>
-
-<button onclick="switchCamera()">
-🔄 สลับกล้อง
-</button>
-
-<button onclick="takePhoto()">
-📸 ถ่ายรูป
-</button>
 
 <button onclick="capture()">
 ✅ เช็คชื่อ
@@ -177,113 +146,55 @@ button:hover{
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbwv-yh1hJPzm8sjztqSugsgbuOGZj9zXtG6OZHftWIo2rD1ijSrF1b4Eo2mdvTcUNT0/exec';
 
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const statusText = document.getElementById('status');
+const statusText =
+  document.getElementById('status');
+
+const preview =
+  document.getElementById('preview');
+
+const cameraInput =
+  document.getElementById('cameraInput');
 
 let latitude = '';
 let longitude = '';
 
 let capturedImage = '';
 
-let currentStream = null;
-
-let facingMode = "user";
-
 navigator.geolocation.getCurrentPosition(
+
   function(position){
 
     latitude = position.coords.latitude;
     longitude = position.coords.longitude;
 
   }
+
 );
 
-async function startCamera(){
+cameraInput.addEventListener('change', function(e){
 
-  try{
+  const file = e.target.files[0];
 
-    if(currentStream){
+  if(!file) return;
 
-      currentStream.getTracks().forEach(track => {
-        track.stop();
-      });
+  const reader = new FileReader();
 
-    }
+  reader.onload = function(event){
 
-    const stream = await navigator.mediaDevices.getUserMedia({
+    capturedImage = event.target.result;
 
-      video:{
-        facingMode:facingMode
-      },
+    preview.src = capturedImage;
 
-      audio:false
-
-    });
-
-    currentStream = stream;
-
-    video.srcObject = stream;
-
-    video.style.display = 'block';
+    preview.style.display = 'block';
 
     statusText.innerHTML =
-      facingMode == 'user'
-      ? 'เปิดกล้องหน้า'
-      : 'เปิดกล้องหลัง';
+      'ถ่ายรูปเรียบร้อย';
 
-  }catch(err){
+  };
 
-    console.error(err);
+  reader.readAsDataURL(file);
 
-    statusText.innerHTML = err.message;
-
-  }
-}
-
-async function switchCamera(){
-
-  facingMode =
-    facingMode == 'user'
-    ? 'environment'
-    : 'user';
-
-  await startCamera();
-
-}
-
-function takePhoto(){
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-
-  const ctx = canvas.getContext('2d');
-
-  ctx.drawImage(video,0,0);
-
-  capturedImage = canvas.toDataURL('image/png');
-
-  const preview =
-    document.getElementById('preview');
-
-  preview.src = capturedImage;
-
-  preview.style.display = 'block';
-
-  video.style.display = 'none';
-
-  if(currentStream){
-
-    currentStream.getTracks().forEach(track => {
-      track.stop();
-    });
-
-  }
-
-  statusText.innerHTML =
-    'ถ่ายรูปเรียบร้อย';
-
-}
+});
 
 async function capture(){
 
@@ -307,7 +218,8 @@ async function capture(){
 
   }
 
-  statusText.innerHTML = 'กำลังบันทึก...';
+  statusText.innerHTML =
+    'กำลังบันทึก...';
 
   try{
 
